@@ -1,0 +1,55 @@
+# ITI Attendance AI - systemd service unit
+#
+# Install:
+#   sudo cp iti-attendance.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable iti-attendance
+#   sudo systemctl start iti-attendance
+#
+# Logs:
+#   sudo journalctl -u iti-attendance -f
+
+[Unit]
+Description=ITI Attendance AI FastAPI Backend
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/iti-attendance/backend
+
+# Load production environment variables
+EnvironmentFile=/opt/iti-attendance/backend/.env.production
+
+# Activate venv and launch uvicorn
+# 4 workers = (2 × CPU cores) + 1 for a 2-core NIC VM
+ExecStart=/opt/iti-attendance/backend/venv/bin/uvicorn \
+    app.main:app \
+    --host 127.0.0.1 \
+    --port 8000 \
+    --workers 4 \
+    --loop uvloop \
+    --log-level info \
+    --access-log
+
+# Restart on crash, but not on clean exit
+Restart=on-failure
+RestartSec=5s
+StartLimitIntervalSec=60s
+StartLimitBurst=3
+
+# Resource limits
+LimitNOFILE=65536
+TimeoutStartSec=30
+TimeoutStopSec=30
+
+# Hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ReadWritePaths=/opt/iti-attendance/backend/storage
+
+[Install]
+WantedBy=multi-user.target

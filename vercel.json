@@ -1,8 +1,14 @@
 {
   "buildCommand": "cd frontend-react && npm install && npm run build",
   "outputDirectory": "frontend-react/dist",
-  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }],
-  "env": {
-    "VITE_API_BASE_URL": "https://iti-hackthon.onrender.com"
-  }
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://iti-hackthon.onrender.com/api/:path*"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/index.html"
+    }
+  ]
 }

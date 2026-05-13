@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useI18n } from '../context/I18nContext'
-import { parseApiError } from '../api/client'
+import { API_BASE, parseApiError } from '../api/client'
 import KpiCard from '../components/KpiCard'
 
 const STATUS_COLORS = {
   present: 'badge-green', late: 'badge-orange', outside_geofence: 'badge-red',
-  face_mismatch: 'badge-red', under_review: 'badge-orange', absent: 'badge-red',
+  face_mismatch: 'badge-red', needs_review: 'badge-orange', absent: 'badge-red',
 }
 
 export default function AttendanceEvents() {
@@ -26,7 +26,7 @@ export default function AttendanceEvents() {
     if (filters.today_only) params.set('today_only', 'true')
     if (filters.limit) params.set('limit', filters.limit)
     try {
-      const resp = await fetch(`/api/v1/attendance/events?${params}`, { headers: authHeaders() })
+      const resp = await fetch(API_BASE + `/api/v1/attendance/events?${params}`, { headers: authHeaders() })
       const data = await resp.json()
       if (!resp.ok) { setStatus({ msg: parseApiError(data.detail), type: 'error' }); return }
       const items = Array.isArray(data) ? data : (data.items || [])
@@ -44,7 +44,7 @@ export default function AttendanceEvents() {
     if (filters.date) params.set('date', filters.date)
     if (filters.today_only) params.set('today_only', 'true')
     try {
-      const resp = await fetch(`/api/v1/attendance/export?${params}`, { headers: { Authorization: `Bearer ${token}` } })
+      const resp = await fetch(API_BASE + `/api/v1/attendance/export?${params}`, { headers: { Authorization: `Bearer ${token}` } })
       if (!resp.ok) { setStatus({ msg: 'Export failed.', type: 'error' }); return }
       const blob = await resp.blob()
       const cd = resp.headers.get('Content-Disposition') || ''
@@ -59,8 +59,8 @@ export default function AttendanceEvents() {
   }
 
   const kpiPresent = events.filter(e => e.status === 'present').length
-  const kpiReview = events.filter(e => ['under_review', 'face_mismatch', 'outside_geofence'].includes(e.status)).length
-  const kpiSelfies = events.filter(e => e.selfie_url).length
+  const kpiReview = events.filter(e => ['needs_review', 'face_mismatch', 'outside_geofence'].includes(e.status)).length
+  const kpiSelfies = events.filter(e => e.selfie_evidence?.saved === true).length
 
   return (
     <>
@@ -95,7 +95,7 @@ export default function AttendanceEvents() {
                   <option value="">All</option>
                   <option value="present">Present</option>
                   <option value="late">Late</option>
-                  <option value="under_review">Under Review</option>
+                  <option value="needs_review">Needs Review</option>
                   <option value="outside_geofence">Outside Geofence</option>
                   <option value="face_mismatch">Face Mismatch</option>
                 </select>
@@ -149,7 +149,7 @@ export default function AttendanceEvents() {
                   <tr key={ev.id}>
                     <td>
                       <strong>#{ev.id}</strong>
-                      <div className="small">{ev.checked_in_at?.slice(0, 16) || '--'}</div>
+                      <div className="small">{ev.event_time?.slice(0, 16) || '--'}</div>
                     </td>
                     <td>
                       <strong>ID {ev.student_id}</strong>
@@ -161,18 +161,17 @@ export default function AttendanceEvents() {
                       </span>
                     </td>
                     <td>
-                      {ev.face_similarity != null
-                        ? <strong>{(ev.face_similarity * 100).toFixed(1)}%</strong>
+                      {ev.face_match_score != null
+                        ? <strong>{(ev.face_match_score * 100).toFixed(1)}%</strong>
                         : '--'
                       }
                     </td>
-                    <td>{ev.distance_meters != null ? `${ev.distance_meters.toFixed(0)}m` : '--'}</td>
-                    <td><div className="small">{ev.industry_id ? `#${ev.industry_id}` : '--'}</div></td>
+                    <td>{ev.distance_from_industry_meters != null ? `${Number(ev.distance_from_industry_meters).toFixed(0)}m` : '--'}</td>
+                    <td><div className="small">{ev.industry_name || (ev.industry_id ? `#${ev.industry_id}` : '--')}</div></td>
                     <td>
-                      {ev.selfie_url
-                        ? <a href={ev.selfie_url} target="_blank" rel="noreferrer" style={{ fontSize: 12 }}>View Selfie</a>
-                        : <span style={{ fontSize: 12, color: '#94a3b8' }}>No selfie</span>
-                      }
+                      {ev.selfie_evidence?.saved === true
+                        ? <span style={{ fontSize: 12, color: '#16a34a' }}>Saved on server</span>
+                        : <span style={{ fontSize: 12, color: '#94a3b8' }}>No selfie</span>}
                     </td>
                   </tr>
                 ))}

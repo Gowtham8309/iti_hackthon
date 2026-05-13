@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useI18n } from '../context/I18nContext'
-import { parseApiError } from '../api/client'
+import { API_BASE, parseApiError } from '../api/client'
 import KpiCard from '../components/KpiCard'
 
 const SEVERITY_COLORS = {
@@ -27,11 +27,12 @@ export default function Anomalies() {
     if (filters.review_status) params.set('review_status', filters.review_status)
     if (filters.limit) params.set('limit', filters.limit)
     try {
-      const resp = await fetch(`/api/v1/anomalies?${params}`, { headers: authHeaders() })
+      const resp = await fetch(API_BASE + `/api/v1/anomalies?${params}`, { headers: authHeaders() })
       const data = await resp.json()
       if (!resp.ok) { setStatus({ msg: parseApiError(data.detail), type: 'error' }); return }
-      setAnomalies(Array.isArray(data) ? data : (data.items || []))
-      setStatus({ msg: `${anomalies.length} anomalies loaded.`, type: 'success' })
+      const items = Array.isArray(data) ? data : (data.items || [])
+      setAnomalies(items)
+      setStatus({ msg: `${items.length} anomalies loaded.`, type: 'success' })
     } catch {
       setStatus({ msg: 'Network error.', type: 'error' })
     }
@@ -39,16 +40,18 @@ export default function Anomalies() {
 
   async function submitReview(id, action) {
     const note = reviewNote[id] || ''
+    const review_status = action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'escalated'
     try {
-      const resp = await fetch(`/api/v1/anomalies/${id}/review`, {
-        method: 'POST',
-        headers: authHeaders(),
-        body: JSON.stringify({ action, supervisor_notes: note }),
+      const resp = await fetch(API_BASE + `/api/v1/anomalies/${id}/review`, {
+        method: 'PATCH',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ review_status, review_notes: note }),
       })
       const data = await resp.json()
       if (!resp.ok) { setStatus({ msg: parseApiError(data.detail), type: 'error' }); return }
-      setReviewStatus(rs => ({ ...rs, [id]: `${action} applied.` }))
-      setStatus({ msg: `Anomaly #${id} reviewed: ${action}.`, type: 'success' })
+      setReviewStatus(rs => ({ ...rs, [id]: `${review_status} applied.` }))
+      setStatus({ msg: `Anomaly #${id} reviewed: ${review_status}.`, type: 'success' })
+      await loadAnomalies()
     } catch {
       setStatus({ msg: 'Review request failed.', type: 'error' })
     }
@@ -60,7 +63,7 @@ export default function Anomalies() {
     if (filters.severity) params.set('severity', filters.severity)
     if (filters.review_status) params.set('review_status', filters.review_status)
     try {
-      const resp = await fetch(`/api/v1/anomalies/export?${params}`, { headers: { Authorization: `Bearer ${token}` } })
+      const resp = await fetch(API_BASE + `/api/v1/anomalies/export?${params}`, { headers: { Authorization: `Bearer ${token}` } })
       if (!resp.ok) { setStatus({ msg: 'Export failed.', type: 'error' }); return }
       const blob = await resp.blob()
       const url = URL.createObjectURL(blob)
@@ -170,7 +173,7 @@ export default function Anomalies() {
                     </td>
                     <td>
                       <strong>Student {a.student_id}</strong>
-                      <div className="small">{a.event_id ? `Event #${a.event_id}` : ''}</div>
+                      <div className="small">{a.attendance_event_id ? `Event #${a.attendance_event_id}` : ''}</div>
                     </td>
                     <td>
                       <span className={`badge ${SEVERITY_COLORS[a.severity] || 'badge-blue'}`}>

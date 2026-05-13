@@ -32,7 +32,7 @@ export default function Dashboard() {
     try {
       const params = new URLSearchParams()
       if (dashDate) params.set('date', dashDate)
-      const resp = await fetch(`/api/v1/dashboard/summary?${params}`, { headers: authHeaders() })
+      const resp = await fetch(API_BASE + `/api/v1/dashboard/summary?${params}`, { headers: authHeaders() })
       const data = await resp.json()
       if (!resp.ok) { setStatus({ msg: parseApiError(data.detail, 'Failed'), type: 'error' }); return }
       setSummary(data)
@@ -44,10 +44,17 @@ export default function Dashboard() {
 
   async function loadAnalytics() {
     try {
-      const resp = await fetch(API_BASE + '/api/v1/dashboard/analytics', { headers: authHeaders() })
+      const end = new Date()
+      const start = new Date()
+      start.setDate(end.getDate() - 13)
+      const params = new URLSearchParams({
+        start_date: start.toISOString().slice(0, 10),
+        end_date: end.toISOString().slice(0, 10),
+      })
+      const resp = await fetch(API_BASE + `/api/v1/dashboard/analytics?${params}`, { headers: authHeaders() })
       if (!resp.ok) return
       const data = await resp.json()
-      setAnalytics(data.days || [])
+      setAnalytics(data.days || data.items || [])
     } catch {}
   }
 

@@ -89,11 +89,11 @@ export default function CheckIn() {
 
   async function getLocation() {
     if (useDemo && demoLat && demoLon) {
-      return { latitude: parseFloat(demoLat), longitude: parseFloat(demoLon) }
+      return { latitude: parseFloat(demoLat), longitude: parseFloat(demoLon), accuracy: null }
     }
     return new Promise((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(
-        p => resolve({ latitude: p.coords.latitude, longitude: p.coords.longitude }),
+        p => resolve({ latitude: p.coords.latitude, longitude: p.coords.longitude, accuracy: p.coords.accuracy }),
         err => reject(new Error(`GPS error: ${err.message}`)),
         { timeout: 10000 }
       )
@@ -121,18 +121,27 @@ export default function CheckIn() {
     const endpoint = actionMode === 'check_out' ? '/api/v1/attendance/check-out' : '/api/v1/attendance/check-in'
 
     try {
-      const resp = await fetch(endpoint, {
+      const resp = await fetch(API_BASE + endpoint, {
         method: 'POST',
         headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({
           student_id: 0,  // auto-filled server-side from token for students/faculty
           latitude: coords.latitude,
           longitude: coords.longitude,
+          gps_accuracy_meters: coords.accuracy,
+          browser_info: navigator.userAgent,
+          device_id: `${navigator.platform || 'web'}:${user?.username || 'unknown'}`,
           selfie_image_base64,
           selfie_captured: true,
         }),
       })
-      const data = await resp.json()
+      const rawText = await resp.text()
+      let data = {}
+      try {
+        data = rawText ? JSON.parse(rawText) : {}
+      } catch {
+        data = { detail: rawText || `HTTP ${resp.status}` }
+      }
       if (!resp.ok) { setStatus({ msg: parseApiError(data.detail, 'Check-in failed.'), type: 'error' }); return }
       // Flatten nested response into a shape the decision card can read
       const ev = data.attendance_event || {}
@@ -155,8 +164,8 @@ export default function CheckIn() {
         reasons: dec.reason ? [dec.reason] : [],
       })
       setStatus({ msg: '', type: '' })
-    } catch {
-      setStatus({ msg: 'Network error. Check backend server.', type: 'error' })
+    } catch (err) {
+      setStatus({ msg: err?.message || 'Network error. Check backend server.', type: 'error' })
     }
   }
 

@@ -1,0 +1,5 @@
+{
+  "buildCommand": "cd frontend-react && npm install && npm run build",
+  "outputDirectory": "frontend-react/dist",
+  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }]
+}

@@ -13,7 +13,7 @@ python-jose[cryptography]
 passlib
 python-multipart
 
-opencv-python
+opencv-python-headless
 numpy
 pandas
 scikit-learn

@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { parseApiError } from '../api/client'
+import { API_BASE, parseApiError } from '../api/client'
 
 export default function EnrollFace() {
   const { token, authHeaders } = useAuth()
@@ -79,7 +79,7 @@ export default function EnrollFace() {
     })
 
     try {
-      const resp = await fetch('/api/v1/face/enroll', {
+      const resp = await fetch(API_BASE + '/api/v1/face/enroll', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ student_id: Number(studentId), selfie_image_base64 }),

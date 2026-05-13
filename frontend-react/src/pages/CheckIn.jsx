@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useI18n } from '../context/I18nContext'
-import { parseApiError } from '../api/client'
+import { API_BASE, parseApiError } from '../api/client'
 
 export default function CheckIn() {
   const { user, token, logout, authHeaders } = useAuth()
@@ -34,7 +34,7 @@ export default function CheckIn() {
 
   async function loadStudentProfile() {
     try {
-      const resp = await fetch('/api/v1/auth/my-student-profile', { headers: authHeaders() })
+      const resp = await fetch(API_BASE + '/api/v1/auth/my-student-profile', { headers: authHeaders() })
       if (resp.ok) {
         const data = await resp.json()
         setProfile(data.student || data.profile || data)

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useI18n } from '../context/I18nContext'
-import { parseApiError } from '../api/client'
+import { API_BASE, parseApiError } from '../api/client'
 
 function safeVal(v, fb = '--') { return v === null || v === undefined || v === '' ? fb : v }
 
@@ -55,7 +55,7 @@ function StudentsTab({ authHeaders, token }) {
   async function loadStudents() {
     setStatus({ msg: 'Loading…', type: '' })
     try {
-      const resp = await fetch('/api/v1/students?limit=100', { headers: authHeaders() })
+      const resp = await fetch(API_BASE + '/api/v1/students?limit=100', { headers: authHeaders() })
       const data = await resp.json()
       if (!resp.ok) { setStatus({ msg: parseApiError(data.detail), type: 'error' }); return }
       setStudents(Array.isArray(data) ? data : (data.items || []))
@@ -65,7 +65,7 @@ function StudentsTab({ authHeaders, token }) {
 
   async function createStudent() {
     try {
-      const resp = await fetch('/api/v1/students', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ ...form, batch: form.batch || null, industry_id: Number(form.industry_id) || null }) })
+      const resp = await fetch(API_BASE + '/api/v1/students', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ ...form, batch: form.batch || null, industry_id: Number(form.industry_id) || null }) })
       const data = await resp.json()
       if (!resp.ok) { setStatus({ msg: parseApiError(data.detail), type: 'error' }); return }
       setStatus({ msg: `Student #${data.id} created.`, type: 'success' })
@@ -137,7 +137,7 @@ function IndustriesTab({ authHeaders, token }) {
 
   async function loadIndustries() {
     try {
-      const resp = await fetch('/api/v1/industries?limit=100', { headers: authHeaders() })
+      const resp = await fetch(API_BASE + '/api/v1/industries?limit=100', { headers: authHeaders() })
       const data = await resp.json()
       if (resp.ok) setIndustries(Array.isArray(data) ? data : (data.items || []))
     } catch {}
@@ -146,7 +146,7 @@ function IndustriesTab({ authHeaders, token }) {
   async function createIndustry() {
     const payload = { ...form, latitude: parseFloat(form.latitude) || null, longitude: parseFloat(form.longitude) || null, geofence_radius_m: parseInt(form.geofence_radius_m) || 200 }
     try {
-      const resp = await fetch('/api/v1/industries', { method: 'POST', headers: authHeaders(), body: JSON.stringify(payload) })
+      const resp = await fetch(API_BASE + '/api/v1/industries', { method: 'POST', headers: authHeaders(), body: JSON.stringify(payload) })
       const data = await resp.json()
       if (!resp.ok) { setStatus({ msg: parseApiError(data.detail), type: 'error' }); return }
       setStatus({ msg: `Industry #${data.id} created.`, type: 'success' })
@@ -158,7 +158,7 @@ function IndustriesTab({ authHeaders, token }) {
   async function geocodeMissing() {
     setStatus({ msg: 'Geocoding missing coordinates…', type: '' })
     try {
-      const resp = await fetch('/api/v1/ops/industries/geocode-missing', { method: 'POST', headers: authHeaders() })
+      const resp = await fetch(API_BASE + '/api/v1/ops/industries/geocode-missing', { method: 'POST', headers: authHeaders() })
       const data = await resp.json()
       if (!resp.ok) { setStatus({ msg: parseApiError(data.detail), type: 'error' }); return }
       setStatus({ msg: `Geocoded: ${data.updated ?? 0} industries updated.`, type: 'success' })
@@ -228,7 +228,7 @@ function RostersTab({ authHeaders }) {
 
   async function loadRosters() {
     try {
-      const resp = await fetch('/api/v1/rosters?limit=100', { headers: authHeaders() })
+      const resp = await fetch(API_BASE + '/api/v1/rosters?limit=100', { headers: authHeaders() })
       const data = await resp.json()
       if (resp.ok) setRosters(Array.isArray(data) ? data : (data.items || []))
     } catch {}
@@ -237,7 +237,7 @@ function RostersTab({ authHeaders }) {
   async function createRoster() {
     const payload = { ...form, student_id: Number(form.student_id), industry_id: Number(form.industry_id) }
     try {
-      const resp = await fetch('/api/v1/rosters', { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      const resp = await fetch(API_BASE + '/api/v1/rosters', { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       const data = await resp.json()
       if (!resp.ok) { setStatus({ msg: parseApiError(data.detail), type: 'error' }); return }
       setStatus({ msg: `Roster #${data.id} created.`, type: 'success' })
@@ -248,7 +248,7 @@ function RostersTab({ authHeaders }) {
   async function assignRosters() {
     setStatus({ msg: 'Auto-assigning rosters…', type: '' })
     try {
-      const resp = await fetch('/api/v1/ops/pilot-data/assign-rosters', { method: 'POST', headers: authHeaders() })
+      const resp = await fetch(API_BASE + '/api/v1/ops/pilot-data/assign-rosters', { method: 'POST', headers: authHeaders() })
       const data = await resp.json()
       if (!resp.ok) { setStatus({ msg: parseApiError(data.detail), type: 'error' }); return }
       setStatus({ msg: `Auto-assigned: ${data.assigned ?? 0} rosters created.`, type: 'success' })
@@ -319,7 +319,7 @@ function PilotImportTab({ authHeaders }) {
     setStatus({ msg: 'Previewing…', type: '' })
     const fd = new FormData(); fd.append('file', file)
     try {
-      const resp = await fetch('/api/v1/ops/pilot-data/preview', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('iti_attendance_token')}` }, body: fd })
+      const resp = await fetch(API_BASE + '/api/v1/ops/pilot-data/preview', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('iti_attendance_token')}` }, body: fd })
       const data = await resp.json()
       if (!resp.ok) { setStatus({ msg: parseApiError(data.detail), type: 'error' }); return }
       setPreview(data)
@@ -332,7 +332,7 @@ function PilotImportTab({ authHeaders }) {
     setStatus({ msg: 'Importing…', type: '' })
     const fd = new FormData(); fd.append('file', file)
     try {
-      const resp = await fetch('/api/v1/ops/pilot-data/import', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('iti_attendance_token')}` }, body: fd })
+      const resp = await fetch(API_BASE + '/api/v1/ops/pilot-data/import', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('iti_attendance_token')}` }, body: fd })
       const data = await resp.json()
       if (!resp.ok) { setStatus({ msg: parseApiError(data.detail), type: 'error' }); return }
       setStatus({ msg: `Import done. ${data.students_created ?? 0} students, ${data.industries_created ?? 0} industries, ${data.rosters_created ?? 0} rosters created.`, type: 'success' })
@@ -373,7 +373,7 @@ function DayStatesTab({ authHeaders }) {
 
   async function loadDayStates() {
     try {
-      const resp = await fetch('/api/v1/day-states?limit=30', { headers: authHeaders() })
+      const resp = await fetch(API_BASE + '/api/v1/day-states?limit=30', { headers: authHeaders() })
       const data = await resp.json()
       if (resp.ok) setDayStates(Array.isArray(data) ? data : (data.items || []))
     } catch {}
@@ -381,7 +381,7 @@ function DayStatesTab({ authHeaders }) {
 
   async function createDayState() {
     try {
-      const resp = await fetch('/api/v1/day-states', { method: 'POST', headers: authHeaders(), body: JSON.stringify(form) })
+      const resp = await fetch(API_BASE + '/api/v1/day-states', { method: 'POST', headers: authHeaders(), body: JSON.stringify(form) })
       const data = await resp.json()
       if (!resp.ok) { setStatus({ msg: parseApiError(data.detail), type: 'error' }); return }
       setStatus({ msg: `Day state for ${form.date} set to "${form.state_type}".`, type: 'success' })

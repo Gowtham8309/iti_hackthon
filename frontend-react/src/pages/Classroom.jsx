@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useI18n } from '../context/I18nContext'
-import { parseApiError } from '../api/client'
+import { API_BASE, parseApiError } from '../api/client'
 import KpiCard from '../components/KpiCard'
 import ScoreBar from '../components/ScoreBar'
 
@@ -58,7 +58,7 @@ export default function Classroom() {
       observed_at: form.observed_at ? new Date(form.observed_at).toISOString() : null,
     }
     try {
-      const resp = await fetch('/api/v1/classroom-observations', {
+      const resp = await fetch(API_BASE + '/api/v1/classroom-observations', {
         method: 'POST', headers: authHeaders(), body: JSON.stringify(payload),
       })
       const data = await resp.json()
@@ -94,7 +94,7 @@ export default function Classroom() {
     }
     setListStatus({ msg: 'Running bulk recompute…', type: '' })
     try {
-      const resp = await fetch('/api/v1/classroom-observations/recompute-all', { method: 'POST', headers: authHeaders() })
+      const resp = await fetch(API_BASE + '/api/v1/classroom-observations/recompute-all', { method: 'POST', headers: authHeaders() })
       const data = await resp.json()
       if (!resp.ok) { setListStatus({ msg: parseApiError(data.detail), type: 'error' }); return }
       setListStatus({ msg: `Done. ${data.updated ?? 0} of ${data.total_observations ?? 0} updated.`, type: 'success' })

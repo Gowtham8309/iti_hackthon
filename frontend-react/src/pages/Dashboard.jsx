@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useI18n } from '../context/I18nContext'
-import { parseApiError } from '../api/client'
+import { API_BASE, parseApiError } from '../api/client'
 import KpiCard from '../components/KpiCard'
 import MetricCard from '../components/MetricCard'
 
@@ -44,7 +44,7 @@ export default function Dashboard() {
 
   async function loadAnalytics() {
     try {
-      const resp = await fetch('/api/v1/dashboard/analytics', { headers: authHeaders() })
+      const resp = await fetch(API_BASE + '/api/v1/dashboard/analytics', { headers: authHeaders() })
       if (!resp.ok) return
       const data = await resp.json()
       setAnalytics(data.days || [])
@@ -56,7 +56,7 @@ export default function Dashboard() {
     setNotifStatus({ msg: 'Sending…', type: '' })
     setNotifResult(null)
     try {
-      const resp = await fetch('/api/v1/ops/notify/test', {
+      const resp = await fetch(API_BASE + '/api/v1/ops/notify/test', {
         method: 'POST',
         headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify(notifForm),
@@ -87,7 +87,7 @@ export default function Dashboard() {
     setSeedStatus({ msg: 'Seeding demo data…', type: '' })
     setSeedResult(null)
     try {
-      const resp = await fetch('/api/v1/ops/seed-demo', { method: 'POST', headers: authHeaders() })
+      const resp = await fetch(API_BASE + '/api/v1/ops/seed-demo', { method: 'POST', headers: authHeaders() })
       const data = await resp.json()
       if (!resp.ok) {
         setSeedStatus({ msg: parseApiError(data.detail, 'Seed failed.'), type: 'error' })

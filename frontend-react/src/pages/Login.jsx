@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { parseApiError } from '../api/client'
+import { API_BASE, parseApiError } from '../api/client'
 
 const ROLE_LANDING = {
   faculty: '/checkin',
@@ -37,7 +37,7 @@ export default function Login() {
     e.preventDefault()
     setLoginStatus({ msg: 'Logging in…', type: '' })
     try {
-      const resp = await fetch('/api/v1/auth/login', {
+      const resp = await fetch(API_BASE + '/api/v1/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -58,7 +58,7 @@ export default function Login() {
   async function requestPasswordReset() {
     setResetStatus({ msg: 'Sending reset token…', type: '' })
     try {
-      const resp = await fetch('/api/v1/auth/request-password-reset', {
+      const resp = await fetch(API_BASE + '/api/v1/auth/request-password-reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: resetIdentifier }),
@@ -78,7 +78,7 @@ export default function Login() {
   async function submitPasswordReset() {
     setResetStatus({ msg: 'Updating password…', type: '' })
     try {
-      const resp = await fetch('/api/v1/auth/reset-password', {
+      const resp = await fetch(API_BASE + '/api/v1/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: resetToken, new_password: resetNewPassword }),
@@ -113,7 +113,7 @@ export default function Login() {
         role: 'student',
         selfie_image_base64,
       }
-      const resp = await fetch('/api/v1/auth/student-signup', {
+      const resp = await fetch(API_BASE + '/api/v1/auth/student-signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

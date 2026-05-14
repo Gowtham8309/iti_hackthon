@@ -8,6 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import require_admin, require_supervisor_or_above
+from app.core.config import settings
 from app.db.database import get_db
 from app.models.database_models import (
     AnomalyFlag,
